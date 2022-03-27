@@ -3,6 +3,11 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
+def add_resistances(G, min_R=0.1, max_R=50):
+    for u, v in G.edges():
+        G[u][v]['R'] = np.random.uniform(min_R, max_R)
+
+
 def generate_graph_random_connected(nodes_cnt, p, save_file_path='random_connected.edgelist'):
     G = nx.erdos_renyi_graph(nodes_cnt, p)
 
@@ -12,8 +17,9 @@ def generate_graph_random_connected(nodes_cnt, p, save_file_path='random_connect
     for i in range(nodes_cnt-1):
         G.add_edge(nodes[i], nodes[i+1])
 
+    add_resistances(G)
     nx.write_edgelist(G, save_file_path)
-    return G
+    return save_file_path
 
 
 def generate_graph_cubic(nodes_cnt, save_file_path='cubic.edgelist'):
@@ -27,29 +33,20 @@ def generate_graph_cubic(nodes_cnt, save_file_path='cubic.edgelist'):
 
 def generate_graph_bridged(island_nodes_cnt, bridge_len, save_file_path='bridged.edgelist'):
     G = nx.barbell_graph(island_nodes_cnt, bridge_len)
+    add_resistances(G)
     nx.write_edgelist(G, save_file_path)
-    return G
+    return save_file_path
 
 
 def generate_graph_grid_2d(m, n, save_file_path='grid_2d.edgelist'):
     G = nx.grid_2d_graph(m, n)
+    add_resistances(G)
     nx.write_edgelist(G, save_file_path)
-    return G
+    return save_file_path
 
 
 def generate_graph_small_world(nodes_cnt, save_file_path='small_world.edgelist'):
     G = nx.navigable_small_world_graph(nodes_cnt)
+    add_resistances(G)
     nx.write_edgelist(G, save_file_path)
-    return G
-
-
-def create_nx_digraph(nodes, edges):
-    G = nx.DiGraph()
-    G.add_nodes_from(nodes)
-    G.add_edges_from(edges)
-    return G
-
-
-def display_nx_graph(G):
-    nx.draw(G, with_labels=True, font_weight='bold')
-    plt.show()
+    return save_file_path

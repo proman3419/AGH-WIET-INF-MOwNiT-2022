@@ -12,6 +12,10 @@ class ElectricalCircuitModel:
         self.E = E
         self.eps = eps
 
+        if (self.s, self.t) not in self.G.edges:
+            self.G.add_edge(self.s, self.t)
+        self.G[self.s][self.t]['R'] = 0
+
         self.edges_cnt = self.G.number_of_edges()
         self.A = np.zeros((self.edges_cnt, self.edges_cnt))
         self.B = np.zeros(self.edges_cnt)
@@ -55,14 +59,14 @@ class ElectricalCircuitModel:
                         pass
             self.eq_cnt += 1
 
-    def fix_directions(self, edges_list):
+    def fix_directions_assign_amp(self, edges_list):
         for ei, e in enumerate(edges_list):
             u, v = e
             if self.B[ei] < 0:
-                self.B[ei] = -self.B[ei]
-                self.G.add_edge(v, u)
+                self.G.add_edge(*(e[::-1]))
                 self.G[v][u]['R'] = self.G[u][v]['R']
                 self.G.remove_edge(*e)
+                self.B[ei] *= -1
                 u, v = v, u
             self.G[u][v]['I'] = self.B[ei]
 
@@ -88,18 +92,19 @@ class ElectricalCircuitModel:
                 elif e == (self.t, self.s):
                     U -= self.E
                 else:
-                    if e in self.G.edges():
+                    if e in self.G.edges:
                         U -= self.G[u][v]['I'] * self.G[u][v]['R']
-                    elif e[::-1] in self.G.edges():
+                    elif e[::-1] in self.G.edges:
                         U += self.G[v][u]['I'] * self.G[v][u]['R']
             if U > self.eps:
                 print(f'Kirchhoff 2 nie jest spełniony; oczekiwano abs(U) <= {self.eps}, otrzymano U = {U}')
 
-    def display(self):
-        pos = nx.spring_layout(self.G)
+    def display(self, layout=nx.random_layout, pos=None):
+        if pos is None:
+            pos = layout(self.G)
 
         nx.draw_networkx_nodes(self.G, pos, 
-                               node_size=420, 
+                               node_size=400, 
                                node_color='#ffa826',
                                edgecolors='#000000')
 
@@ -113,12 +118,13 @@ class ElectricalCircuitModel:
 
         nx.draw_networkx_labels(self.G, pos)
 
-        amperage_labels = {}
-        for u, v, attr in self.G.edges(data=True):
-            e = (u, v)
-            amperage_labels[e] = f'{attr["I"]:.3f}'
-        nx.draw_networkx_edge_labels(self.G, pos,
-                                     edge_labels=amperage_labels)
+        if self.edges_cnt < 20:
+            amperage_labels = {}
+            for u, v, attr in self.G.edges(data=True):
+                e = (u, v)
+                amperage_labels[e] = f'{attr["I"]:.3f}'
+            nx.draw_networkx_edge_labels(self.G, pos,
+                                         edge_labels=amperage_labels)
 
         plt.show()
 
@@ -129,13 +135,34 @@ class ElectricalCircuitModel:
         self.kirchhoff_2(edges_list, cycles)
         self.kirchhoff_1(edges_list)
         self.B = np.linalg.solve(self.A, self.B)
-        self.fix_directions(edges_list)
+        self.fix_directions_assign_amp(edges_list)
         self.verify_kirchoff_1()
         self.verify_kirchoff_2(cycles)
-        self.display()
 
 
 if __name__ == '__main__':
-    s, t, E = 0, 1, 10
-    ECM = ElectricalCircuitModel(gg.generate_graph_bridged(5, 3), s, t, E)
+    s, t, E = 0, 1, 100
+    GG = gg.GraphGenerator()
+
+    # ECM = ElectricalCircuitModel(GG.generate_graph_random_connected(10, 0.1), s, t, E)
+    # ECM.simulate()
+    # ECM.display()
+
+    # ECM = ElectricalCircuitModel(GG.generate_graph_cubic(), s, t, E)
+    # ECM.simulate()
+    # ECM.display()
+
+    # ECM = ElectricalCircuitModel(GG.generate_graph_bridged(7, 1), s, t, E)
+    # ECM.simulate()
+    # ECM.display()
+
+    m = 10
+    n = 5
+    ECM = ElectricalCircuitModel(GG.generate_graph_grid_2d(m, n), s, t, E)
+    pos = {i: (i//n, i%n) for i in range(m*n)}
     ECM.simulate()
+    ECM.display(pos=pos)
+
+    ECM = ElectricalCircuitModel(GG.generate_graph_small_world(25), s, t, E)
+    ECM.simulate()
+    ECM.display()

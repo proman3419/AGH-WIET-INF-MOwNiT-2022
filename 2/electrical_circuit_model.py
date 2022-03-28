@@ -1,11 +1,15 @@
+#!/usr/bin/env python3
+
 import graph_generator as gg
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import sys
 
 
 class ElectricalCircuitModel:
     def __init__(self, edgelist_file, s, t, E, eps=1e-7):
+        self.edgelist_file = edgelist_file
         self.G = nx.read_edgelist(edgelist_file, nodetype=int, create_using=nx.DiGraph())
         self.s = s
         self.t = t
@@ -49,35 +53,35 @@ class ElectricalCircuitModel:
                 else:
                     try:
                         ei = edges_list.index(e)
-                        self.A[self.eq_cnt,ei] = self.G[u][v]['R']
+                        self.A[self.eq_cnt,ei] = self.G.edges[e]['R']
                     except ValueError:
                         pass
                     try:
                         ei = edges_list.index(e[::-1])
-                        self.A[self.eq_cnt,ei] = -self.G[v][u]['R']
+                        self.A[self.eq_cnt,ei] = -self.G.edges[e[::-1]]['R']
                     except ValueError:
                         pass
             self.eq_cnt += 1
 
     def fix_directions_assign_amp(self, edges_list):
         for ei, e in enumerate(edges_list):
-            u, v = e
             if self.B[ei] < 0:
                 self.G.add_edge(*(e[::-1]))
-                self.G[v][u]['R'] = self.G[u][v]['R']
+                self.G.edges[e[::-1]]['R'] = self.G.edges[e]['R']
                 self.G.remove_edge(*e)
                 self.B[ei] *= -1
-                u, v = v, u
-            self.G[u][v]['I'] = self.B[ei]
+                self.G.edges[e[::-1]]['I'] = self.B[ei]
+            else:
+                self.G.edges[e]['I'] = self.B[ei]
 
     def verify_kirchoff_1(self):
-        for v in self.G.nodes():
+        for node in self.G.nodes:
             I = 0
-            for e in self.G.in_edges(v):
+            for e in self.G.in_edges(node):
                 I += self.G.edges[e]['I']
-            for e in self.G.out_edges(v):
+            for e in self.G.out_edges(node):
                 I -= self.G.edges[e]['I']
-            if I > self.eps:
+            if not np.isclose(I, 0, atol=self.eps):
                 print(f'Kirchhoff 1 nie jest spełniony; oczekiwano abs(I) <= {self.eps}, otrzymano I = {I}')
 
     def verify_kirchoff_2(self, cycles):
@@ -92,33 +96,38 @@ class ElectricalCircuitModel:
                 elif e == (self.t, self.s):
                     U -= self.E
                 else:
-                    if e in self.G.edges:
-                        U -= self.G[u][v]['I'] * self.G[u][v]['R']
-                    elif e[::-1] in self.G.edges:
-                        U += self.G[v][u]['I'] * self.G[v][u]['R']
-            if U > self.eps:
+                    if self.G.has_edge(u, v):
+                        U -= self.G.edges[e]['I'] * self.G.edges[e]['R']
+                    elif self.G.has_edge(v, u):
+                        U += self.G.edges[e[::-1]]['I'] * self.G.edges[e[::-1]]['R']
+            if not np.isclose(U, 0, atol=self.eps):
                 print(f'Kirchhoff 2 nie jest spełniony; oczekiwano abs(U) <= {self.eps}, otrzymano U = {U}')
 
-    def display(self, layout=nx.random_layout, pos=None):
+    def display(self, layout=nx.random_layout, pos=None, scale=1.0, show_amperage_labels=True):
+        def scale_val(val):
+            nonlocal scale
+            return scale * val
+
         if pos is None:
             pos = layout(self.G)
 
         nx.draw_networkx_nodes(self.G, pos, 
-                               node_size=400, 
+                               node_size=scale_val(400), 
                                node_color='#ffa826',
                                edgecolors='#000000')
 
         edges, weights = zip(*nx.get_edge_attributes(self.G, 'I').items())
         nx.draw_networkx_edges(self.G, pos,
-                               width=2.0,
-                               arrowsize=12,
+                               width=scale_val(2.0),
+                               arrowsize=scale_val(12),
                                edgelist=edges,
                                edge_color=weights,
                                edge_cmap=plt.cm.YlOrRd)
 
-        nx.draw_networkx_labels(self.G, pos)
+        nx.draw_networkx_labels(self.G, pos,
+                                font_size=scale_val(12))
 
-        if self.edges_cnt < 20:
+        if show_amperage_labels:
             amperage_labels = {}
             for u, v, attr in self.G.edges(data=True):
                 e = (u, v)
@@ -126,6 +135,7 @@ class ElectricalCircuitModel:
             nx.draw_networkx_edge_labels(self.G, pos,
                                          edge_labels=amperage_labels)
 
+        plt.title(f'{self.edgelist_file}, {self.G.number_of_nodes()} węzłów')
         plt.show()
 
     def simulate(self):
@@ -141,28 +151,22 @@ class ElectricalCircuitModel:
 
 
 if __name__ == '__main__':
-    s, t, E = 0, 1, 100
-    GG = gg.GraphGenerator()
+    if len(sys.argv) < 5:
+        print('python electrical_circuit_model.py <edgelist_file> <s> <t> <E>')
+        exit()
 
-    # ECM = ElectricalCircuitModel(GG.generate_graph_random_connected(10, 0.1), s, t, E)
-    # ECM.simulate()
-    # ECM.display()
+    edgelist_file = sys.argv[1]
+    s = int(sys.argv[2])
+    t = int(sys.argv[3])
+    E = float(sys.argv[4])
 
-    # ECM = ElectricalCircuitModel(GG.generate_graph_cubic(), s, t, E)
-    # ECM.simulate()
-    # ECM.display()
-
-    # ECM = ElectricalCircuitModel(GG.generate_graph_bridged(7, 1), s, t, E)
-    # ECM.simulate()
-    # ECM.display()
-
-    m = 10
-    n = 5
-    ECM = ElectricalCircuitModel(GG.generate_graph_grid_2d(m, n), s, t, E)
-    pos = {i: (i//n, i%n) for i in range(m*n)}
-    ECM.simulate()
-    ECM.display(pos=pos)
-
-    ECM = ElectricalCircuitModel(GG.generate_graph_small_world(25), s, t, E)
-    ECM.simulate()
-    ECM.display()
+    try:
+        ECM = ElectricalCircuitModel(edgelist_file, s, t, E)
+        ECM.simulate()
+        ECM.display()
+    except FileNotFoundError:
+        print('Nie znaleziono pliku wejściowego')
+    except PermissionError:
+        print('Brak dostępu do pliku wejściowego')
+    except IsADirectoryError:
+        print('Podano katalog jako plik wejściowy')

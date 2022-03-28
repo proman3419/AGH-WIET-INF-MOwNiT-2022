@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import sys
 
 
 class GraphGenerator:
@@ -11,6 +14,19 @@ class GraphGenerator:
     def add_resistances(self, G, min_R=0.1, max_R=50):
         for u, v in G.edges():
             G[u][v]['R'] = np.random.uniform(min_R, max_R)
+
+    def map_nodes_2d_to_1d(self, G, n):
+        labels_map = {}
+        for node in G.nodes:
+            labels_map[node] = node[0]*n + node[1]
+        return nx.relabel_nodes(G, labels_map)
+
+    def convert_undirected_to_directed(self, G):
+        _G = nx.DiGraph()
+        for u, v in G.edges:
+            if not (_G.has_edge(u, v) or _G.has_edge(v, u)):
+                _G.add_edge(u, v)
+        return _G
 
     def generate_graph_random_connected(self, nodes_cnt, p, save_file_path='random_connected.edgelist'):
         G = nx.erdos_renyi_graph(nodes_cnt, p, seed=self.seed)
@@ -23,9 +39,9 @@ class GraphGenerator:
 
         self.add_resistances(G)
         nx.write_edgelist(G, save_file_path)
-        return save_file_path
+        return G, save_file_path
 
-    def generate_graph_cubic(self, save_file_path='cubic.edgelist'):
+    def generate_graph_cubic(self, save_file_path='cubic.edgelist', graph_id=None):
         cubic_graphs = [
             [12, [-3,6,4,-4,6,3,-4,6,-3,3,6,4]],
             [12, [-5,-2,-4,2,5,-2,2,5,-2,-5,4,2]],
@@ -34,42 +50,56 @@ class GraphGenerator:
             [112, [44, 26, -47, -15, 35, -39, 11, -27, 38, -37, 43, 14, 28, 51, -29, -16, 41, -11, -26, 15, 22, -51, -35, 36, 52, -14, -33, -26, -46, 52, 26, 16, 43, 33, -15, 17, -53, 23, -42, -35, -28, 30, -22, 45, -44, 16, -38, -16, 50, -55, 20, 28, -17, -43, 47, 34, -26, -41, 11, -36, -23, -16, 41, 17, -51, 26, -33, 47, 17, -11, -20, -30, 21, 29, 36, -43, -52, 10, 39, -28, -17, -52, 51, 26, 37, -17, 10, -10, -45, -34, 17, -26, 27, -21, 46, 53, -10, 29, -50, 35, 15, -47, -29, -41, 26, 33, 55, -17, 42, -26, -36, 16]]
         ]
 
-        i = np.random.randint(0, len(cubic_graphs)+1)
+        i = graph_id if graph_id is not None else np.random.randint(0, len(cubic_graphs))
         nodes_cnt, LCF = cubic_graphs[i]
         G = nx.LCF_graph(nodes_cnt, LCF, 3).to_directed()
 
-        # wynikiem jest graf nieskierowany, należy zamienić go na graf skierowany
-        _G = nx.DiGraph()
-        for u, v in G.edges:
-            if not (_G.has_edge(u, v) or _G.has_edge(v, u)):
-                _G.add_edge(u, v)
-        G = _G
+        G = self.convert_undirected_to_directed(G)
 
         self.add_resistances(G)
         nx.write_edgelist(G, save_file_path)
-        return save_file_path
+        return G, save_file_path
 
     def generate_graph_bridged(self, island_nodes_cnt, bridge_len, save_file_path='bridged.edgelist'):
         G = nx.barbell_graph(island_nodes_cnt, bridge_len)
         self.add_resistances(G)
         nx.write_edgelist(G, save_file_path)
-        return save_file_path
+        return G, save_file_path
 
     def generate_graph_grid_2d(self, m, n, save_file_path='grid_2d.edgelist'):
         G = nx.grid_2d_graph(m, n)
 
-        # wynikiem jest graf o wierzchołkach z dwoma indeksami, należy sprowadzić je do jednego
-        labels_map = {}
-        for node in G.nodes:
-            labels_map[node] = node[0]*n + node[1]
-        G = nx.relabel_nodes(G, labels_map)
+        G = self.map_nodes_2d_to_1d(G, n)
 
         self.add_resistances(G)
         nx.write_edgelist(G, save_file_path)
-        return save_file_path
+        return G, save_file_path
 
     def generate_graph_small_world(self, nodes_cnt, save_file_path='small_world.edgelist'):
         G = nx.navigable_small_world_graph(nodes_cnt, seed=self.seed)
+        
+        G = self.map_nodes_2d_to_1d(G, nodes_cnt)
+        G = self.convert_undirected_to_directed(G)
+
         self.add_resistances(G)
         nx.write_edgelist(G, save_file_path)
-        return save_file_path
+        return G, save_file_path
+
+    def display_nx_graph(self, G):
+        nx.draw(G, with_labels=True, font_weight='bold')
+        plt.show()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print('python graph_generator.py <seed>')
+        exit()
+
+    seed = int(sys.argv[1])
+
+    GG = GraphGenerator(seed)
+    GG.generate_graph_random_connected(10, 0.1)
+    GG.generate_graph_cubic()
+    GG.generate_graph_bridged(4, 0)
+    GG.generate_graph_grid_2d(5, 4)
+    GG.generate_graph_small_world(3)

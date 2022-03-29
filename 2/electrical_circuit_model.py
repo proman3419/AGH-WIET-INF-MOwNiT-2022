@@ -163,13 +163,23 @@ class ElectricalCircuitModel:
                                          edge_labels=edge_labels)
 
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
-        plt.colorbar(sm)
+        plt.colorbar(sm, label='Natężenie prądu [A]')
         plt.title(f'{self.edgelist_file}, {self.G.number_of_nodes()} węzłów\nSEM {self.E}V między węzłami {self.s} i {self.t}')
         plt.show()
 
     def simulate(self):
+        def put_sem_cycle_at_start(cycles):
+            for ci, c in enumerate(cycles):
+                if self.s in c and self.t in c:
+                    res = [cycles[ci]] + cycles[:ci]
+                    if ci < len(cycles) - 1:
+                       res = res + cycles[ci+1:]
+                    return res
+            return cycles
+
         edges_list = list(self.G.edges)
         cycles = nx.cycle_basis(self.G.to_undirected())
+        cycles = put_sem_cycle_at_start(cycles)
 
         self.kirchhoff_2(edges_list, cycles)
         self.kirchhoff_1(edges_list)

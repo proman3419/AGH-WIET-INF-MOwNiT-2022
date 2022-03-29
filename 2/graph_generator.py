@@ -41,7 +41,7 @@ class GraphGenerator:
         nx.write_edgelist(G, save_file_path)
         return G, save_file_path
 
-    def generate_graph_cubic(self, save_file_path='cubic.edgelist', graph_id=None):
+    def generate_graph_cubic(self, graph_id=None, save_file_path='cubic.edgelist'):
         cubic_graphs = [
             [12, [-3,6,4,-4,6,3,-4,6,-3,3,6,4]],
             [12, [-5,-2,-4,2,5,-2,2,5,-2,-5,4,2]],

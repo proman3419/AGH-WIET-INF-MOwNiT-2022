@@ -103,39 +103,68 @@ class ElectricalCircuitModel:
             if not np.isclose(U, 0, atol=self.eps):
                 print(f'Kirchhoff 2 nie jest spełniony; oczekiwano abs(U) <= {self.eps}, otrzymano U = {U}')
 
-    def display(self, layout=nx.random_layout, pos=None, scale=1.0, show_amperage_labels=True):
+    def get_graph_details(self, weighted_edge_width_scalar):
+        vmin = float('inf')
+        vmax = float('-inf')
+        edge_labels = {}
+        edge_widths = []
+        for u, v, attr in self.G.edges(data=True):
+            e = (u, v)
+            if attr['R'] == 0:
+                edge_labels[e] = f'{attr["I"]:.2f}A\nSEM {self.E}V'
+            else:
+                edge_labels[e] = f'{attr["I"]:.2f}A\n{attr["R"]:.2f}Ω'
+
+            if attr['I'] < vmin:
+                vmin = attr['I']
+            elif attr['I'] > vmax:
+                vmax = attr['I']
+
+            edge_widths.append(attr['I'])
+
+        edge_widths = np.array(edge_widths) * (weighted_edge_width_scalar/vmax)
+
+        return vmin, vmax, edge_labels, edge_widths
+
+    def display(self, width=8, height=6, dpi=80, layout=nx.random_layout, 
+                pos=None, scale=1.0, show_edge_labels=True, 
+                weighted_edge_widths=False, weighted_edge_width_scalar=2.0):
         def scale_val(val):
             nonlocal scale
             return scale * val
 
+        plt.figure(figsize=(width, height), dpi=dpi)
+        vmin, vmax, edge_labels, edge_widths = self.get_graph_details(weighted_edge_width_scalar)
+        cmap = plt.cm.winter
+        edges, edge_weights = zip(*nx.get_edge_attributes(self.G, 'I').items())
+
         if pos is None:
             pos = layout(self.G)
+        if not weighted_edge_widths:
+            edge_widths = 2.0
 
         nx.draw_networkx_nodes(self.G, pos, 
                                node_size=scale_val(400), 
                                node_color='#ffa826',
                                edgecolors='#000000')
 
-        edges, weights = zip(*nx.get_edge_attributes(self.G, 'I').items())
         nx.draw_networkx_edges(self.G, pos,
-                               width=scale_val(2.0),
+                               width=scale_val(edge_widths),
                                arrowsize=scale_val(12),
                                edgelist=edges,
-                               edge_color=weights,
-                               edge_cmap=plt.cm.YlOrRd)
+                               edge_color=edge_weights,
+                               edge_cmap=cmap)
 
         nx.draw_networkx_labels(self.G, pos,
                                 font_size=scale_val(12))
 
-        if show_amperage_labels:
-            amperage_labels = {}
-            for u, v, attr in self.G.edges(data=True):
-                e = (u, v)
-                amperage_labels[e] = f'{attr["I"]:.3f}'
+        if show_edge_labels:
             nx.draw_networkx_edge_labels(self.G, pos,
-                                         edge_labels=amperage_labels)
+                                         edge_labels=edge_labels)
 
-        plt.title(f'{self.edgelist_file}, {self.G.number_of_nodes()} węzłów')
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+        plt.colorbar(sm)
+        plt.title(f'{self.edgelist_file}, {self.G.number_of_nodes()} węzłów\nSEM {self.E}V między węzłami {self.s} i {self.t}')
         plt.show()
 
     def simulate(self):

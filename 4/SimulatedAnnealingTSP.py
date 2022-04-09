@@ -2,14 +2,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Point import Point
 from SimulatedAnnealing import SimulatedAnnealing
+import os
 
 
 class SimulatedAnnealingTSP(SimulatedAnnealing):
-    def __init__(self, n_iterations, T, n):
+    def __init__(self, init_features, n_iterations, T, 
+                 save_file_dir, save_file_name_base):
+        self.init_features = init_features
         self.n_iterations = n_iterations
         self.T = T
-        self.n = n
-        self.features = self.generate_points(n, -10, 10, -10, 10)
+        self.save_file_dir = save_file_dir
+        self.save_file_path_base = os.path.join(save_file_dir, 
+                                                save_file_name_base)
+        self.n = len(init_features)
+        super().__init__()
 
     # v SimulatedAnnealing overrides v
     def get_next_T(self):
@@ -36,15 +42,8 @@ class SimulatedAnnealingTSP(SimulatedAnnealing):
             next_ft = self.get_next_feature(i)
             plt.plot([ft.x, next_ft.x], [ft.y, next_ft.y], 'g')
             plt.plot(ft.x, ft.y, 'ro')
-        plt.title(f'cost: {self.cost}')
-        plt.savefig(f'{frame_name}.png')
-        plt.clf()
+        self.save_frame(frame_name)
     # ^ SimulatedAnnealing overrides ^
-
-    def generate_points(self, n, min_x, max_x, min_y, max_y):
-        return np.array([Point(np.random.uniform(min_x, max_x), 
-                               np.random.uniform(min_y, max_y)) 
-                        for _ in range(n)])
 
     def get_next_feature(self, i):
         return self.features[(i+1)%self.n]
@@ -52,8 +51,21 @@ class SimulatedAnnealingTSP(SimulatedAnnealing):
     def swap_features(self, fti1, fti2):
         self.features[fti1], self.features[fti2] = self.features[fti2], self.features[fti1]
 
+def generate_points(n, min_x, max_x, min_y, max_y):
+    return np.array([Point(np.random.uniform(min_x, max_x), 
+                           np.random.uniform(min_y, max_y)) 
+                    for _ in range(n)])
+
 
 if __name__ == '__main__':
-    tsp = SimulatedAnnealingTSP(10, 100, 5)
-    tsp.perform(init_min_imgs=False, gif=True)
-    print(tsp.init_cost, tsp.min_cost)
+    np.random.seed(1337)
+    init_features = generate_points(10, -10, 10, -10, 10)
+    tsp = SimulatedAnnealingTSP(init_features, n_iterations=100, T=100, 
+                                save_file_dir='output', save_file_name_base='tspshort')
+    tsp.perform(init_min_imgs=True, gif=False)
+    tsp.show_init_min_imgs(figsize=(6, 4))
+
+    tsp = SimulatedAnnealingTSP(init_features, n_iterations=1000, T=100, 
+                                save_file_dir='output', save_file_name_base='tsplong')
+    tsp.perform(init_min_imgs=True, gif=False)
+    tsp.show_init_min_imgs(figsize=(6, 4))

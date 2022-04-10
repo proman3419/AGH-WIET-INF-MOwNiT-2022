@@ -4,29 +4,31 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import imageio
 import os
-from copy import deepcopy
+from typing import Callable
 
 
 class SimulatedAnnealing(ABC):
     init_features : list = None
     init_T : int = None
+    get_next_T_func : Callable = None
     n_iterations : int = None
     save_file_dir : str = None
     save_file_path_base : str = None
     costs = []
     Ts = []
-    # T, cost, features - temporary fields
+    # T, Ts, cost, costs, features - to clear
 
     @abstractmethod
-    def __init__(self):
+    def __init__(self, seed):
+        np.random.seed(seed)
         if not os.path.exists(self.save_file_dir):
             os.makedirs(self.save_file_dir)
         self.T = self.init_T
-        self.Ts.append(self.init_T)
-        self.features = deepcopy(self.init_features)
-        self.min_features = deepcopy(self.init_features)
+        self.Ts = [self.init_T]
+        self.features = np.copy(self.init_features)
+        self.min_features = np.copy(self.init_features)
         self.cost = self.init_cost = self.min_cost = self.get_cost()
-        self.costs.append(self.init_cost)
+        self.costs = [self.init_cost]
 
     @abstractmethod
     def get_next_T(self, i):
@@ -49,7 +51,7 @@ class SimulatedAnnealing(ABC):
         pass
 
     def save_frame(self, frame_name):
-        plt.title(f'cost: {self.cost}', size=14)
+        plt.title(f'koszt: {self.cost}', size=14)
         plt.axis('off')
         plt.savefig(self.get_frame_path(frame_name))
         plt.close()
@@ -65,22 +67,22 @@ class SimulatedAnnealing(ABC):
         self.features = self.min_features
         self.create_frame('minimal')
 
-    def show_init_min_imgs(self, figsize=(6, 4)):
+    def show_init_min_imgs(self, figsize=(7, 5)):
         fig = plt.figure(figsize=figsize)
 
         ax = fig.add_subplot(1, 2, 1)
         imgplot = plt.imshow(mpimg.imread(self.get_frame_path('initial')))
-        ax.set_title('Stan początkowy', size=9)
+        ax.set_title('Stan początkowy')
         plt.axis('off')
 
         ax = fig.add_subplot(1, 2, 2)
         imgplot = plt.imshow(mpimg.imread(self.get_frame_path('minimal')))
-        ax.set_title('Stan minimalny', size=9)
+        ax.set_title('Stan minimalny')
         plt.axis('off')
 
         plt.show()
 
-    def show_cost_graph(self, figsize=(6, 4)):
+    def show_cost_graph(self, figsize=(7, 5)):
         fig = plt.figure(figsize=figsize)
 
         ax = fig.add_subplot(1, 1, 1)
@@ -89,10 +91,33 @@ class SimulatedAnnealing(ABC):
 
         plt.show()
 
-    def show_temperature_graph(self, figsize=(6, 4)):
+    def show_temperature_graph(self, figsize=(7, 5)):
         fig = plt.figure(figsize=figsize)
 
         ax = fig.add_subplot(1, 1, 1)
+        plt.plot(list(range(len(self.Ts))), self.Ts)
+        ax.set_title('Temperatura w zależności od numeru iteracji')
+
+        plt.show()
+
+    def show_all(self, figsize=(14, 10)):
+        fig = plt.figure(figsize=figsize)
+
+        ax = fig.add_subplot(2, 2, 1)
+        imgplot = plt.imshow(mpimg.imread(self.get_frame_path('initial')))
+        ax.set_title('Stan początkowy')
+        plt.axis('off')
+
+        ax = fig.add_subplot(2, 2, 2)
+        imgplot = plt.imshow(mpimg.imread(self.get_frame_path('minimal')))
+        ax.set_title('Stan minimalny')
+        plt.axis('off')
+
+        ax = fig.add_subplot(2, 2, 3)
+        plt.plot(list(range(len(self.costs))), self.costs)
+        ax.set_title('Koszt rozwiązania w zależności od numeru iteracji')
+
+        ax = fig.add_subplot(2, 2, 4)
         plt.plot(list(range(len(self.Ts))), self.Ts)
         ax.set_title('Temperatura w zależności od numeru iteracji')
 
@@ -124,7 +149,7 @@ class SimulatedAnnealing(ABC):
 
             if self.cost < self.min_cost:
                 self.min_cost = self.cost
-                self.min_features = deepcopy(self.features)
+                self.min_features = np.copy(self.features)
             else:
                 x = np.random.uniform()
                 ap = self.get_acceptance_probability(old_cost, self.cost)
@@ -142,3 +167,10 @@ class SimulatedAnnealing(ABC):
             self.remove_frames()
         if init_min_imgs:
             self.create_init_min_imgs()
+
+    def clear(self):
+        self.T = None
+        self.Ts = []
+        self.cost = None
+        self.costs = []
+        self.features = None

@@ -7,7 +7,7 @@ import os
 
 class SimulatedAnnealingTSP(SimulatedAnnealing):
     def __init__(self, init_features, n_iterations, init_T, get_next_T_func,
-                 save_file_dir, save_file_name_base, seed):
+                 save_file_dir, save_file_name_base, seed=5040, consecutive_swap=False):
         self.init_features = init_features
         self.n_iterations = n_iterations
         self.init_T = init_T
@@ -16,14 +16,24 @@ class SimulatedAnnealingTSP(SimulatedAnnealing):
         self.save_file_path_base = os.path.join(save_file_dir, 
                                                 save_file_name_base)
         self.n = len(init_features)
+        self.consecutive_swap = consecutive_swap
         super().__init__(seed)
 
     # v SimulatedAnnealing overrides v
     def get_next_T(self, i):
-        return self.get_next_T_func(self.init_T, self.T, i)
+        return self.get_next_T_func(self.init_T, self.T, i, self.n_iterations)
 
     def features_change(self):
-        fti1, fti2 = np.random.randint(0, self.n, size=2)
+        if self.consecutive_swap:
+            def get_closest_feature_id(fti):
+                dists = np.where((self.features-self.features[fti])**2 > 0)
+                closest_fti = np.argmin(dists)
+                closest_fti += int(closest_fti >= fti)
+                return closest_fti
+            fti1 = np.random.randint(0, self.n, size=1)[0]
+            fti2 = get_closest_feature_id(fti1)
+        else:
+            fti1, fti2 = np.random.randint(0, self.n, size=2)
         self.swap_features(fti1, fti2)
         return [(fti1, fti2)]
 

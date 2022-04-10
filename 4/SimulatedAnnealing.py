@@ -19,7 +19,7 @@ class SimulatedAnnealing(ABC):
     # T, Ts, cost, costs, features - to clear
 
     @abstractmethod
-    def __init__(self, seed):
+    def __init__(self, seed=5040):
         np.random.seed(seed)
         if not os.path.exists(self.save_file_dir):
             os.makedirs(self.save_file_dir)
@@ -67,7 +67,7 @@ class SimulatedAnnealing(ABC):
         self.features = self.min_features
         self.create_frame('minimal')
 
-    def show_init_min_imgs(self, figsize=(7, 5)):
+    def show_init_min_imgs(self, figsize=(14, 10)):
         fig = plt.figure(figsize=figsize)
 
         ax = fig.add_subplot(1, 2, 1)
@@ -82,7 +82,7 @@ class SimulatedAnnealing(ABC):
 
         plt.show()
 
-    def show_cost_graph(self, figsize=(7, 5)):
+    def show_cost_graph(self, figsize=(14, 10)):
         fig = plt.figure(figsize=figsize)
 
         ax = fig.add_subplot(1, 1, 1)
@@ -91,7 +91,7 @@ class SimulatedAnnealing(ABC):
 
         plt.show()
 
-    def show_temperature_graph(self, figsize=(7, 5)):
+    def show_temperature_graph(self, figsize=(14, 10)):
         fig = plt.figure(figsize=figsize)
 
         ax = fig.add_subplot(1, 1, 1)

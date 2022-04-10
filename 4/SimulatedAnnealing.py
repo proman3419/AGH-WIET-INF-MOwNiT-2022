@@ -9,19 +9,27 @@ from copy import deepcopy
 
 class SimulatedAnnealing(ABC):
     init_features : list = None
+    init_T : int = None
     n_iterations : int = None
-    T : int = None
     save_file_dir : str = None
     save_file_path_base : str = None
-    # cost, features - temporary fields
+    costs = []
+    Ts = []
+    # T, cost, features - temporary fields
 
     @abstractmethod
     def __init__(self):
         if not os.path.exists(self.save_file_dir):
             os.makedirs(self.save_file_dir)
+        self.T = self.init_T
+        self.Ts.append(self.init_T)
+        self.features = deepcopy(self.init_features)
+        self.min_features = deepcopy(self.init_features)
+        self.cost = self.init_cost = self.min_cost = self.get_cost()
+        self.costs.append(self.init_cost)
 
     @abstractmethod
-    def get_next_T(self):
+    def get_next_T(self, i):
         raise NotImplementedError
 
     @abstractmethod
@@ -57,18 +65,36 @@ class SimulatedAnnealing(ABC):
         self.features = self.min_features
         self.create_frame('minimal')
 
-    def show_init_min_imgs(self, figsize):
+    def show_init_min_imgs(self, figsize=(6, 4)):
         fig = plt.figure(figsize=figsize)
 
         ax = fig.add_subplot(1, 2, 1)
         imgplot = plt.imshow(mpimg.imread(self.get_frame_path('initial')))
-        ax.set_title('Initial', size=9)
+        ax.set_title('Stan początkowy', size=9)
         plt.axis('off')
 
         ax = fig.add_subplot(1, 2, 2)
         imgplot = plt.imshow(mpimg.imread(self.get_frame_path('minimal')))
-        ax.set_title('Minimal', size=9)
+        ax.set_title('Stan minimalny', size=9)
         plt.axis('off')
+
+        plt.show()
+
+    def show_cost_graph(self, figsize=(6, 4)):
+        fig = plt.figure(figsize=figsize)
+
+        ax = fig.add_subplot(1, 1, 1)
+        plt.plot(list(range(len(self.costs))), self.costs)
+        ax.set_title('Koszt rozwiązania w zależności od numeru iteracji')
+
+        plt.show()
+
+    def show_temperature_graph(self, figsize=(6, 4)):
+        fig = plt.figure(figsize=figsize)
+
+        ax = fig.add_subplot(1, 1, 1)
+        plt.plot(list(range(len(self.Ts))), self.Ts)
+        ax.set_title('Temperatura w zależności od numeru iteracji')
 
         plt.show()
 
@@ -82,17 +108,17 @@ class SimulatedAnnealing(ABC):
         for i in range(-1, self.n_iterations):
             os.remove(self.get_frame_path(i))
 
-    def get_acceptance_probability(self, i, old_cost, new_cost):
-        return np.exp(-i*(old_cost-new_cost)/old_cost)
+    def get_acceptance_probability(self, old_cost, new_cost):
+        return np.exp((old_cost-new_cost)/self.T)
 
     def perform(self, init_min_imgs=True, gif=False):
-        self.features = deepcopy(self.init_features)
-        self.min_features = deepcopy(self.features)
-        self.init_cost = self.min_cost = self.cost = old_cost = self.get_cost()
-        self.create_frame(-1)
+        old_cost = self.init_cost
+        if gif:
+            self.create_frame(-1)
 
         for i in range(self.n_iterations):
-            self.T = self.get_next_T()
+            self.T = self.get_next_T(i)
+            self.Ts.append(self.T)
             change = self.features_change()
             self.cost = self.get_cost()
 
@@ -101,14 +127,18 @@ class SimulatedAnnealing(ABC):
                 self.min_features = deepcopy(self.features)
             else:
                 x = np.random.uniform()
-                if x > self.get_acceptance_probability(i, old_cost, self.cost):                    
+                ap = self.get_acceptance_probability(old_cost, self.cost)
+                if x > ap:
                     self.reverse_features_change(change)
+                    self.cost = old_cost
 
-            self.create_frame(i)
+            if gif:
+                self.create_frame(i)
+            self.costs.append(self.cost)
             old_cost = self.cost
 
         if gif:
             self.create_gif()
+            self.remove_frames()
         if init_min_imgs:
             self.create_init_min_imgs()
-        self.remove_frames()

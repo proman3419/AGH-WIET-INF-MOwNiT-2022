@@ -21,8 +21,9 @@ class SimulatedAnnealing(ABC):
     @abstractmethod
     def __init__(self, seed=5040):
         np.random.seed(seed)
-        if not os.path.exists(self.save_file_dir):
-            os.makedirs(self.save_file_dir)
+        if self.save_file_dir != None:
+            if not os.path.exists(self.save_file_dir):
+                os.makedirs(self.save_file_dir)
         self.T = self.init_T
         self.Ts = [self.init_T]
         self.features = np.copy(self.init_features)
@@ -167,6 +168,9 @@ class SimulatedAnnealing(ABC):
             self.remove_frames()
         if init_min_imgs:
             self.create_init_min_imgs()
+
+        self.features = self.min_features
+        self.cost = self.min_cost
 
     def clear(self):
         self.T = None

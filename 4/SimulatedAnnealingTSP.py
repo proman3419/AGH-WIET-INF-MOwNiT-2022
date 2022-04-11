@@ -83,23 +83,3 @@ class PointsGeneratorTSP:
                       np.random.randint(0, y_n_groups) + 
                       np.random.uniform(-density, density)) 
                 for i in range(n)]
-
-
-if __name__ == '__main__':
-    PGTSP = PointsGeneratorTSP()
-    # init_features = PGTSP.generate_groups(n=100, x_n_groups=3, y_n_groups=3, density=0.2)
-    # init_features = PGTSP.generate_uniform(n=100)
-    # init_features = PGTSP.generate_normal(n=100, mu=0, sigma=1) # domyślny
-    # init_features = PGTSP.generate_normal(n=100, mu=0, sigma=0.1) # ostry
-    # init_features = PGTSP.generate_normal(n=100, mu=0, sigma=3) # łagodny
-    # init_features = PGTSP.generate_normal(n=100, mu=-10, sigma=0.5) # przesunięty, średni
-
-    def get_next_T_func(init_T, T, i):
-        return T * 0.95
-    TSP = SimulatedAnnealingTSP(init_features, n_iterations=10**3, init_T=10**6,
-                                get_next_T_func=get_next_T_func,
-                                save_file_dir='output', save_file_name_base='tsp')
-    TSP.perform(init_min_imgs=True, gif=False)
-    TSP.show_init_min_imgs()
-    TSP.show_cost_graph()
-    # TSP.show_temperature_graph()

@@ -28,7 +28,7 @@ class SimulatedAnnealing(ABC):
         self.Ts = [self.init_T]
         self.features = np.copy(self.init_features)
         self.min_features = np.copy(self.init_features)
-        self.cost = self.init_cost = self.min_cost = self.get_cost()
+        self.cost = self.init_cost = self.min_cost = self.get_cost(init=True)
         self.costs = [self.init_cost]
 
     @abstractmethod
@@ -44,15 +44,15 @@ class SimulatedAnnealing(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_cost(self):
+    def get_cost(self, init=False, change=None):
         raise NotImplementedError
 
     @abstractmethod
     def create_frame(self, frame_name):
         pass
 
-    def save_frame(self, frame_name):
-        plt.title(f'koszt: {self.cost}', size=14)
+    def save_frame(self, frame_name, cost_size):
+        plt.title(f'koszt: {self.cost}', size=cost_size)
         plt.axis('off')
         plt.savefig(self.get_frame_path(frame_name))
         plt.close()
@@ -146,7 +146,7 @@ class SimulatedAnnealing(ABC):
             self.T = self.get_next_T(i)
             self.Ts.append(self.T)
             change = self.features_change()
-            self.cost = self.get_cost()
+            self.cost = self.get_cost(change=change)
 
             if self.cost < self.min_cost:
                 self.min_cost = self.cost

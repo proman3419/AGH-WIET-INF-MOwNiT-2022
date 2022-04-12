@@ -41,7 +41,7 @@ class SimulatedAnnealingTSP(SimulatedAnnealing):
         fti1, fti2 = change[0]
         self.swap_features(fti1, fti2)
 
-    def get_cost(self):
+    def get_cost(self, init=False, change=None):
         cost = 0.0
         for i, ft in enumerate(self.features):
             cost += ft.get_dist(self.get_next_feature(i))
@@ -53,7 +53,7 @@ class SimulatedAnnealingTSP(SimulatedAnnealing):
             next_ft = self.get_next_feature(i)
             plt.plot([ft.x, next_ft.x], [ft.y, next_ft.y], 'g')
             plt.plot(ft.x, ft.y, 'ro')
-        self.save_frame(frame_name)
+        self.save_frame(frame_name, cost_size=15)
     # ^ SimulatedAnnealing overrides ^
 
     def get_next_feature(self, i):

@@ -32,7 +32,7 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
         bi, fti1, fti2 = change[0]
         self.swap_features(bi, fti1, fti2)
 
-    def get_cost(self):
+    def get_cost(self, init=False, change=None):
         cost = 0
         for i in range(9):
             cost += self.occ_to_cost(self.get_occ_in_row(i)) + \

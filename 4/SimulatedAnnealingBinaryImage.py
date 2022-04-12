@@ -41,7 +41,7 @@ class SimulatedAnnealingBinaryImage(SimulatedAnnealing):
             cost = 0
             for i in range(self.img_width):
                 for j in range(self.img_height):
-                    cost += self.get_cost_func(self.features, i, j, self.img_width, self.img_height)
+                    cost += self.get_cost_func(self.features, i, j, self.img_width, self.img_height, self.neighborhood)
         else:
             fti1, fti2 = change[0]
             ftir1 = fti1//self.img_width
@@ -55,10 +55,12 @@ class SimulatedAnnealingBinaryImage(SimulatedAnnealing):
                 ndi, ndj = nd
                 old_subcost += self.get_cost_func(self.features, ftir1+ndi, 
                                                   ftic1+ndj, 
-                                                  self.img_width, self.img_height)
+                                                  self.img_width, self.img_height,
+                                                  self.neighborhood)
                 old_subcost += self.get_cost_func(self.features, ftir2+ndi, 
                                                   ftic2+ndj, 
-                                                  self.img_width, self.img_height)
+                                                  self.img_width, self.img_height,
+                                                  self.neighborhood)
 
             self.swap_features(fti1, fti2)
             new_subcost = 0
@@ -66,10 +68,12 @@ class SimulatedAnnealingBinaryImage(SimulatedAnnealing):
                 ndi, ndj = nd
                 new_subcost += self.get_cost_func(self.features, ftir1+ndi, 
                                                   ftic1+ndj, 
-                                                  self.img_width, self.img_height)
+                                                  self.img_width, self.img_height,
+                                                  self.neighborhood)
                 new_subcost += self.get_cost_func(self.features, ftir2+ndi, 
                                                   ftic2+ndj, 
-                                                  self.img_width, self.img_height)
+                                                  self.img_width, self.img_height,
+                                                  self.neighborhood)
             cost = self.cost + (new_subcost - old_subcost)
         return cost
 
@@ -85,7 +89,7 @@ class SimulatedAnnealingBinaryImage(SimulatedAnnealing):
         imgplot = plt.imshow(mpimg.imread(self.get_frame_path(frame_name)))
         plt.axis('off')
 
-        self.save_frame(frame_name, cost_size=36)
+        self.save_frame(frame_name, cost_size=38)
     # ^ SimulatedAnnealing overrides ^
 
     def swap_features(self, fti1, fti2):
@@ -118,33 +122,3 @@ class BinaryImage:
     @staticmethod
     def valid_coords(i, j, img_width, img_height):
         return 0 <= i < img_height and 0 <= j < img_height
-
-
-if __name__ == '__main__':
-    def get_next_T_func(init_T, T, i, n_iterations):
-        return T * 0.999
-
-    def get_cost_func_neighborhood_4(features, i, j, img_width, img_height):
-        neighbors_cnt = 0
-
-        if BinaryImage.valid_coords(i-1, j, img_width, img_height): neighbors_cnt += features[i-1][j]
-        if BinaryImage.valid_coords(i, j-1, img_width, img_height): neighbors_cnt += features[i][j-1]
-        if BinaryImage.valid_coords(i+1, j, img_width, img_height): neighbors_cnt += features[i+1][j]
-        if BinaryImage.valid_coords(i, j+1, img_width, img_height): neighbors_cnt += features[i][j+1]
-
-        return neighbors_cnt**2
-
-    neighborhood_4 = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
-    init_features = BinaryImage.generate(256, 256, density=0.1)
-    bin_img = SimulatedAnnealingBinaryImage(init_features=init_features,
-                                            n_iterations=10**5,
-                                            init_T=10**10,
-                                            get_next_T_func=get_next_T_func,
-                                            get_cost_func=get_cost_func_neighborhood_4,
-                                            neighborhood=neighborhood_4,
-                                            save_file_dir='output',
-                                            save_file_name_base='bin_img_4_neighbors')
-    bin_img.perform(init_min_imgs=True, gif=False)
-    bin_img.show_all()
-

@@ -10,6 +10,7 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
                  sudoku_file_path, seed=5040):
         self.box_unknowns_is = [[] for _ in range(9)]
         self.boxis_with_unknowns = []
+        self.sudoku_file_path = sudoku_file_path
         self.init_features = self.read_from_file(sudoku_file_path)
         self.n_iterations = n_iterations
         self.init_T = init_T
@@ -123,24 +124,25 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
         self.read_from_file(sudoku_ans_file_path)
         correct = all([self.features[i][j] == self.min_features[i][j] for i in range(9) for j in range(9)])
         if correct:
-            print('~=] CORRECT [=~')
+            print('~=] ROZWIĄZANIE POPRAWNE [=~')
         else:
-            print('~=] INCORRECT [=~')
+            print('~=] ROZWIĄZANIE NIEPOPRAWNE [=~')
 
+    def print_input_file(self):
+        print('>>> Plik wejściowy')
+        with open(self.sudoku_file_path) as f:
+            for l in f.readlines():
+                print(l.strip())
+        print()
 
-if __name__ == '__main__':
-    def get_next_T_func(init_T, T, i, n_iterations):
-        return T * 0.995
-    sudoku = SimulatedAnnealingSudoku(n_iterations=10**4, init_T=10**10, 
-                                      get_next_T_func=get_next_T_func, 
-                                      sudoku_file_path='sudokus/intermediate.txt')
-    for l in sudoku.features:
-        print(l)
+    def solve(self, sudoku_ans_file_path=None):
+        self.perform(init_min_imgs=False, gif=False)
 
-    print(sudoku)
-    print(sudoku.get_cost())
-    sudoku.perform(init_min_imgs=False, gif=False)
-    print(sudoku)
-    print(sudoku.get_cost())
-    sudoku.show_cost_graph()
-    sudoku.verify(sudoku_ans_file_path='sudokus/intermediate_ans.txt')
+        self.features = self.min_features
+        self.cost = self.min_cost
+
+        print('>>> Stan minimalny')
+        print(self)
+        print(f'Koszt: {self.get_cost()}')
+        if sudoku_ans_file_path != None:
+            self.verify(sudoku_ans_file_path)

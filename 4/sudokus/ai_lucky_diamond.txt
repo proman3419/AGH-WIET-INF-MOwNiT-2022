@@ -1,0 +1,11 @@
+1xx 5xx 4xx
+xx9 x3x xxx
+x7x xx8 xx5
+
+xx1 xxx x3x
+8xx 6xx 5xx
+x9x xx7 xx8
+
+xx4 x2x x1x
+2xx 8xx 6xx
+xxx xx1 xx2

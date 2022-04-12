@@ -45,9 +45,6 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
         pass
     # ^ SimulatedAnnealing overrides ^
 
-    def get_next_feature(self, i):
-        return self.features[(i+1)%self.n]
-
     def swap_features(self, bi, fti1, fti2):
         ftri1 = (bi//3)*3 + fti1//3
         ftci1 = (bi%3)*3 + fti1%3
@@ -129,7 +126,6 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
             print('~=] CORRECT [=~')
         else:
             print('~=] INCORRECT [=~')
-        self.features = self.min_features
 
 
 if __name__ == '__main__':

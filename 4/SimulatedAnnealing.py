@@ -169,9 +169,6 @@ class SimulatedAnnealing(ABC):
         if init_min_imgs:
             self.create_init_min_imgs()
 
-        self.features = self.min_features
-        self.cost = self.min_cost
-
     def clear(self):
         self.T = None
         self.Ts = []

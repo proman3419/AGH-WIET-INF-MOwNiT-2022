@@ -1,9 +1,9 @@
+from SimulatedAnnealing import SimulatedAnnealing
+from BinaryImage import BinaryImage
 import numpy as np
 import matplotlib.pyplot as plt
-from SimulatedAnnealing import SimulatedAnnealing
-import os
-from PIL import Image
 import matplotlib.image as mpimg
+import os
 
 
 class SimulatedAnnealingBinaryImage(SimulatedAnnealing):
@@ -44,36 +44,26 @@ class SimulatedAnnealingBinaryImage(SimulatedAnnealing):
                     cost += self.get_cost_func(self.features, i, j, self.img_width, self.img_height, self.neighborhood)
         else:
             fti1, fti2 = change[0]
-            ftir1 = fti1//self.img_width
-            ftic1 = fti1%self.img_height
-            ftir2 = fti2//self.img_width
-            ftic2 = fti2%self.img_height
+            ftir1, ftic1 = self.extract_ids_for_feature(fti1)
+            ftir2, ftic2 = self.extract_ids_for_feature(fti2)
 
-            self.swap_features(fti1, fti2)
-            old_subcost = 0
-            for nd in self.neighborhood:
-                ndi, ndj = nd
-                old_subcost += self.get_cost_func(self.features, ftir1+ndi, 
-                                                  ftic1+ndj, 
-                                                  self.img_width, self.img_height,
-                                                  self.neighborhood)
-                old_subcost += self.get_cost_func(self.features, ftir2+ndi, 
-                                                  ftic2+ndj, 
-                                                  self.img_width, self.img_height,
-                                                  self.neighborhood)
+            def calculate_subcost(fti1, fti2):
+                self.swap_features(fti1, fti2)
+                subcost = 0
+                for nd in self.neighborhood:
+                    ndi, ndj = nd
+                    subcost += self.get_cost_func(self.features, ftir1+ndi, 
+                                                      ftic1+ndj, 
+                                                      self.img_width, self.img_height,
+                                                      self.neighborhood)
+                    subcost += self.get_cost_func(self.features, ftir2+ndi, 
+                                                      ftic2+ndj, 
+                                                      self.img_width, self.img_height,
+                                                      self.neighborhood)
+                return subcost
 
-            self.swap_features(fti1, fti2)
-            new_subcost = 0
-            for nd in self.neighborhood:
-                ndi, ndj = nd
-                new_subcost += self.get_cost_func(self.features, ftir1+ndi, 
-                                                  ftic1+ndj, 
-                                                  self.img_width, self.img_height,
-                                                  self.neighborhood)
-                new_subcost += self.get_cost_func(self.features, ftir2+ndi, 
-                                                  ftic2+ndj, 
-                                                  self.img_width, self.img_height,
-                                                  self.neighborhood)
+            old_subcost = calculate_subcost(fti1, fti2)
+            new_subcost = calculate_subcost(fti1, fti2)
             cost = self.cost + (new_subcost - old_subcost)
         return cost
 
@@ -93,32 +83,10 @@ class SimulatedAnnealingBinaryImage(SimulatedAnnealing):
     # ^ SimulatedAnnealing overrides ^
 
     def swap_features(self, fti1, fti2):
-        ftir1 = fti1//self.img_width
-        ftic1 = fti1%self.img_height
-        ftir2 = fti2//self.img_width
-        ftic2 = fti2%self.img_height
+        ftir1, ftic1 = self.extract_ids_for_feature(fti1)
+        ftir2, ftic2 = self.extract_ids_for_feature(fti2)
         self.features[ftir1][ftic1], self.features[ftir2][ftic2] = \
         self.features[ftir2][ftic2], self.features[ftir1][ftic1]
 
-
-class BinaryImage:
-    @staticmethod
-    def generate(img_width, img_height, density=0.5, seed=5040):
-        values = [0, 1]
-        return np.random.choice(values, size=(img_height, img_width), 
-                                p=[1-density, density])
-
-    @staticmethod
-    def get_img(bin_img_arr):
-        img_width = len(bin_img_arr[0])
-        img_height = len(bin_img_arr)
-        bin_img_arr = np.array([[(0, 0, 0) if bin_img_arr[i][j] == 1 \
-                                            else (180, 210, 240) 
-                                for i in range(img_height)] 
-                                for j in range(img_width)], dtype=np.uint8)
-        img = Image.fromarray(bin_img_arr)
-        return img
-
-    @staticmethod
-    def valid_coords(i, j, img_width, img_height):
-        return 0 <= i < img_height and 0 <= j < img_height
+    def extract_ids_for_feature(self, fti):
+        return fti//self.img_width, fti%self.img_height

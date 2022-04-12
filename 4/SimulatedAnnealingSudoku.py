@@ -1,8 +1,7 @@
+from SimulatedAnnealing import SimulatedAnnealing
 import numpy as np
 import matplotlib.pyplot as plt
-from SimulatedAnnealing import SimulatedAnnealing
 import os
-from collections import defaultdict
 
 
 class SimulatedAnnealingSudoku(SimulatedAnnealing):
@@ -24,7 +23,6 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
 
     def features_change(self):
         bi = np.random.choice(self.boxis_with_unknowns)
-        # print(bi)
         fti1, fti2 = np.random.choice(self.box_unknowns_is[bi], size=2, replace=False)
         self.swap_features(bi, fti1, fti2)
         return [(bi, fti1, fti2)]
@@ -47,13 +45,14 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
     # ^ SimulatedAnnealing overrides ^
 
     def swap_features(self, bi, fti1, fti2):
-        ftri1 = (bi//3)*3 + fti1//3
-        ftci1 = (bi%3)*3 + fti1%3
-        ftri2 = (bi//3)*3 + fti2//3
-        ftci2 = (bi%3)*3 + fti2%3
+        ftri1, ftci1 = self.extract_ids_for_feature(bi, fti1)
+        ftri2, ftci2 = self.extract_ids_for_feature(bi, fti2)
 
         self.features[ftri1][ftci1], self.features[ftri2][ftci2] = \
         self.features[ftri2][ftci2], self.features[ftri1][ftci1]
+
+    def extract_ids_for_feature(self, bi, fti):
+        return (bi//3)*3 + fti//3, (bi%3)*3 + fti%3
 
     def occ_to_cost(self, occ):
         return np.sum([max(0, o-1) for o in occ])
@@ -107,6 +106,13 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
         self.features = features
         return self.replace_unknowns()
 
+    def print_input_file(self):
+        print('>>> Plik wejściowy')
+        with open(self.sudoku_file_path) as f:
+            for l in f.readlines():
+                print(l.strip())
+        print()
+
     def __str__(self):
         sudoku_str = ''
         for i in range(9):
@@ -127,13 +133,6 @@ class SimulatedAnnealingSudoku(SimulatedAnnealing):
             print('~=] ROZWIĄZANIE POPRAWNE [=~')
         else:
             print('~=] ROZWIĄZANIE NIEPOPRAWNE [=~')
-
-    def print_input_file(self):
-        print('>>> Plik wejściowy')
-        with open(self.sudoku_file_path) as f:
-            for l in f.readlines():
-                print(l.strip())
-        print()
 
     def solve(self, sudoku_ans_file_path=None):
         self.perform(init_min_imgs=False, gif=False)

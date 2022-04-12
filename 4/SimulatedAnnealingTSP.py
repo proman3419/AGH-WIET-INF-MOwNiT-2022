@@ -1,7 +1,7 @@
+from SimulatedAnnealing import SimulatedAnnealing
+from PointsGeneratorTSP import PointsGeneratorTSP
 import numpy as np
 import matplotlib.pyplot as plt
-from Point import Point
-from SimulatedAnnealing import SimulatedAnnealing
 import os
 
 
@@ -61,25 +61,3 @@ class SimulatedAnnealingTSP(SimulatedAnnealing):
 
     def swap_features(self, fti1, fti2):
         self.features[fti1], self.features[fti2] = self.features[fti2], self.features[fti1]
-
-
-class PointsGeneratorTSP:
-    def __init__(self, seed):
-        np.random.seed(seed)
-
-    def generate_uniform(self, n):
-        return np.array([Point(np.random.uniform(), 
-                               np.random.uniform()) 
-                        for _ in range(n)])
-
-    def generate_normal(self, n, mu, sigma):
-        return np.array([Point(np.random.normal(loc=mu, scale=sigma), 
-                               np.random.normal(loc=mu, scale=sigma)) 
-                        for _ in range(n)])
-
-    def generate_groups(self, n, x_n_groups, y_n_groups, density):
-        return [Point(np.random.randint(0, x_n_groups) + 
-                      np.random.uniform(-density, density), 
-                      np.random.randint(0, y_n_groups) + 
-                      np.random.uniform(-density, density)) 
-                for i in range(n)]

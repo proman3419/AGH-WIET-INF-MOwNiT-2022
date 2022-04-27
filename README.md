@@ -10,3 +10,4 @@ Metody obliczeniowe w nauce i technice
 5. [Singular Value Decomposition](https://github.com/proman3419/AGH-WIET-INF-MOwNiT-2022/tree/master/5/5.ipynb)
 6. [*Singular Value Decomposition - zastosowania](https://github.com/proman3419/AGH-WIET-INF-MOwNiT-2022/tree/master/6/6.ipynb)
 7. [Dekompozycja spektralna](https://github.com/proman3419/AGH-WIET-INF-MOwNiT-2022/tree/master/7/7.ipynb)
+8. [Page Rank](https://github.com/proman3419/AGH-WIET-INF-MOwNiT-2022/tree/master/8/8.ipynb)

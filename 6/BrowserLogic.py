@@ -36,6 +36,39 @@ class BrowserLogic(ABC):
             self.preprocess_entries()
             self.create_matrix(self.create_IDFs())
 
+    def search(self, keywords, results_cnt, print_text=True):
+        keywords = set(keywords)
+        scores_entry_ids = self.search_raw(keywords, results_cnt)
+        print(f'Results for: {keywords}')
+        i = 0
+        for score, ei in scores_entry_ids:
+            print(f'>>> Result {i}, scored {score}')
+            self.entries[ei].pretty_print(print_text)
+            print()
+            i += 1
+
+    def search_raw(self, keywords, results_cnt):
+        keywords = set(keywords)
+        query_vec = np.zeros(len(self.dictionary), dtype=float)
+        for kw in keywords:
+            if kw in self.dictionary:
+                query_vec[self.dictionary[kw]] = 1
+        query_norm = np.linalg.norm(query_vec)
+        query_vec_T = query_vec.T
+
+        N = len(self.entries)
+        scores = [None]*N
+        for ei in range(N):
+            scores[ei] = (self.calculate_score(query_vec_T, query_norm, ei), ei)
+
+        return sorted(scores)[N-1:-results_cnt-1:-1]
+
+    def calculate_score(self, query_vec_T, query_norm, entry_id):
+        entry_vec = self.matrix[entry_id].A[0]
+        numerator = query_vec_T @ entry_vec
+        denominator = query_norm * np.linalg.norm(entry_vec)
+        return numerator / denominator
+
     @abstractmethod
     def init_entries(self):
         raise NotImplementedError
@@ -79,7 +112,7 @@ class BrowserLogic(ABC):
                     entries_containing_word[word] += 1
 
         N = len(self.dictionary)
-        IDFs = np.array([0]*N, dtype=float)
+        IDFs = np.zeros(N, dtype=float)
         for word, wi in self.dictionary.items():
             IDFs[wi] = np.log(N/entries_containing_word[word])
         del entries_containing_word
@@ -88,7 +121,7 @@ class BrowserLogic(ABC):
 
     def create_matrix(self, IDFs):
         for entry in self.entries:
-            self.matrix.append(np.array([0]*len(self.dictionary), dtype=float))
+            self.matrix.append(np.zeros(len(self.dictionary), dtype=float))
             for word, occ_cnt in entry.additional_info['words_dict'].items():
                 self.matrix[-1][self.dictionary[word]] = occ_cnt / \
                     entry.additional_info['words_cnt'] * \
@@ -97,7 +130,7 @@ class BrowserLogic(ABC):
             self.matrix[-1] = csr_matrix(self.matrix[-1])
             del entry.additional_info['words_dict']
             del entry.additional_info['words_cnt']
-            
+
         del IDFs
         self.dump(const.DUMP_FP_MATRIX, self.matrix)
 

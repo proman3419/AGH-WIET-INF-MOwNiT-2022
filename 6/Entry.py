@@ -8,6 +8,4 @@ class Entry:
     url: str
     title: str
     text: str
-    words_dict: Dict[str, int]
-    words_vec: List[int]
     additional_info: dict

@@ -1,7 +1,6 @@
 from Entry import Entry
 from BrowserLogic import BrowserLogic
 import datasets
-from collections import defaultdict
 
 
 class WikipediaBrowserLogic(BrowserLogic):
@@ -12,5 +11,4 @@ class WikipediaBrowserLogic(BrowserLogic):
         for raw_entry in raw_entries:
             self.entries.append(Entry(raw_entry['id'], raw_entry['url'],
                                       raw_entry['title'], raw_entry['text'], 
-                                      words_dict=defaultdict(int), words_vec=[],
-                                      additional_info=None))
+                                      additional_info={}))

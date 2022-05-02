@@ -1,13 +1,16 @@
 from Entry import Entry
 from BrowserLogic import BrowserLogic
-from datasets import load_dataset
+import datasets
+from collections import defaultdict
 
 
 class WikipediaBrowserLogic(BrowserLogic):
-    def load_entries(self):
-        raw_entries = load_dataset("wikipedia", "20220301.simple")['train']
+    def init_entries(self):
+        raw_entries = datasets.load_dataset("wikipedia", "20220301.simple", 
+                                            split='train[:5%]')
+        print(len(raw_entries))
         for raw_entry in raw_entries:
             self.entries.append(Entry(raw_entry['id'], raw_entry['url'],
                                       raw_entry['title'], raw_entry['text'], 
-                                      words_set=set(), words_vec=[],
+                                      words_dict=defaultdict(int), words_vec=[],
                                       additional_info=None))

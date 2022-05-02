@@ -1,25 +1,37 @@
 from Entry import Entry
+import const
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Set
 import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 import re
-import tensorflow as tf
+import pickle
 
 
 class BrowserLogic(ABC):
     def __init_subclass__(cls, **kwargs):
         cls.entries: List[Entry] = []
-        cls.dictionary: List[str] = []
+        cls.dictionary: Set(str) = set()
+        nltk.download('wordnet')
+        nltk.download('stopwords')
 
-    def fit(self):
-        self.load_entries()
-        words = self.preprocess_entries()
-        self.generate_dictionary(words)
+    def fit(self, _load_dumped=False):
+        loaded = False
+        if _load_dumped:
+            try:
+                self.entries = self.load_dumped(const.DUMP_FP_ENTRIES)
+                self.dictionary = self.load_dumped(const.DUMP_FP_DICTIONARY)
+                print('Loaded dumped files')
+                loaded = True
+            except FileNotFoundError:
+                pass
+        if not loaded:
+            self.init_entries()
+            self.preprocess_entries()
 
     @abstractmethod
-    def load_entries(self):
+    def init_entries(self):
         raise NotImplementedError
 
     def preprocess_entries(self):
@@ -34,24 +46,25 @@ class BrowserLogic(ABC):
                 if _word == word: _word = lemmatizer.lemmatize(word, pos='n')
                 if _word == word: _word = lemmatizer.lemmatize(word, pos='a')
                 if _word not in stopwords_en:
-                    entry.words_set.add(_word)
+                    entry.words_dict[_word] += 1
 
-            return entry.words_set
+            return entry.words_dict.keys()
 
-        nltk.download('wordnet')
         stopwords_en = set(stopwords.words('english'))
         lemmatizer = WordNetLemmatizer()
 
-        words = set()
+        self.dictionary = set()
         for entry in self.entries:
-            words |= preprocess(entry)
+            self.dictionary |= preprocess(entry)
 
-        return words
+        self.dump(const.DUMP_FP_ENTRIES, self.entries)
+        self.dump(const.DUMP_FP_DICTIONARY, self.dictionary)
 
+    def dump(self, dump_fp, obj):
+        with open(dump_fp, 'wb+') as dump_f:
+            pickle.dump(obj, dump_f)
 
-    def generate_dictionary(self, words):
-        print(words)
-        tokenizer = tf.keras.preprocessing.text.Tokenizer(list(words))
-        tokenizer.fit_on_texts(words)
-        print(tokenizer.word_counts)
-        print(len(tokenizer.word_counts))
+    def load_dumped(self, dump_fp):
+        with open(dump_fp, 'rb') as dump_f:
+            obj = pickle.load(dump_f)
+        return obj

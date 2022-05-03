@@ -1,7 +1,6 @@
 from app.browser_logic.Entry import Entry
 import app.browser_logic.const as const
-from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, Callable
 import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
@@ -14,11 +13,13 @@ from pathlib import Path
 import os
 
 
-class BrowserLogic(ABC):
-    def __init_subclass__(cls, **kwargs):
-        cls.entries: List[Entry] = []
-        cls.dictionary: Dict[str, int] = dict()
-        cls.matrix: List[List[float]] = []
+class BrowserLogic:
+    def __init__(self, name: str, init_entries_func: Callable[[], List[Entry]]):
+        self.name: str = name
+        self.entries: List[Entry] = []
+        self.dictionary: Dict[str, int] = dict()
+        self.matrix: List[List[float]] = []
+        self.init_entries_func: Callable = init_entries_func
         nltk.download('wordnet')
         nltk.download('stopwords')
 
@@ -35,7 +36,7 @@ class BrowserLogic(ABC):
             except FileNotFoundError as e:
                 pass
         if not loaded:
-            self.init_entries()
+            self.entries = self.init_entries_func()
             self.preprocess_entries()
             self.create_matrix(self.create_IDFs())
         print('Finished fitting')
@@ -84,10 +85,6 @@ class BrowserLogic(ABC):
         numerator = query_vec_T @ entry_vec
         denominator = query_norm * np.linalg.norm(entry_vec)
         return numerator / denominator
-
-    @abstractmethod
-    def init_entries(self):
-        raise NotImplementedError
 
     def preprocess_entries(self):
         stopwords_en = set(stopwords.words('english'))

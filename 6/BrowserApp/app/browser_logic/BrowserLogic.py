@@ -38,6 +38,7 @@ class BrowserLogic(ABC):
             self.init_entries()
             self.preprocess_entries()
             self.create_matrix(self.create_IDFs())
+        print('Finished fitting')
 
     def search(self, keywords, results_cnt, print_text=True):
         keywords = set(keywords)
@@ -50,24 +51,36 @@ class BrowserLogic(ABC):
             print()
             i += 1
 
-    def search_raw(self, keywords, results_cnt):
+    def search_raw(self, keywords, results_cnt, noise_reduction=False,
+                   noise_reduction_value=0.2):
         keywords = set(keywords)
         query_vec = np.zeros(len(self.dictionary), dtype=float)
         for kw in keywords:
             if kw in self.dictionary:
                 query_vec[self.dictionary[kw]] = 1
         query_norm = np.linalg.norm(query_vec)
-        query_vec_T = query_vec.T
-
+        matrix = self.matrix
         N = len(self.entries)
+
+        if noise_reduction:
+            # normalizacja
+            query_vec /= query_norm
+            for ei in range(N):
+                matrix[ei] /= np.linalg.norm(matrix[ei].A)
+            k = int(noise_reduction_value*N)
+            U, D, V_T = sci.sparse.linalg.svds(matrix, k=k)
+            matrix = sci.sparse.csr_matrix(U @ np.diag(D) @ V_T)
+
+        query_vec_T = query_vec.T
         scores = [None]*N
         for ei in range(N):
-            scores[ei] = (self.calculate_score(query_vec_T, query_norm, ei), self.entries[ei])
+            scores[ei] = (self.calculate_score(matrix, query_vec_T, 
+                                               query_norm, ei), self.entries[ei])
 
         return sorted(scores)[N-1:-results_cnt-1:-1]
 
-    def calculate_score(self, query_vec_T, query_norm, entry_id):
-        entry_vec = self.matrix[entry_id].A[0]
+    def calculate_score(self, matrix, query_vec_T, query_norm, entry_id):
+        entry_vec = matrix[entry_id].A[0]
         numerator = query_vec_T @ entry_vec
         denominator = query_norm * np.linalg.norm(entry_vec)
         return numerator / denominator
@@ -89,7 +102,6 @@ class BrowserLogic(ABC):
         for wi, word in enumerate(words):
             self.dictionary[word] = wi
 
-        self.dump(const.DUMP_FB_ENTRIES, self.entries)
         self.dump(const.DUMP_FB_DICTIONARY, self.dictionary)
 
     def preprocess(self, entry, lemmatizer, stopwords_en):
@@ -135,6 +147,8 @@ class BrowserLogic(ABC):
             del entry.additional_info['words_cnt']
 
         del IDFs
+        self.matrix = sci.sparse.vstack(self.matrix)
+        self.dump(const.DUMP_FB_ENTRIES, self.entries)
         self.dump(const.DUMP_FB_MATRIX, self.matrix)
 
     def get_fp(self, fb):

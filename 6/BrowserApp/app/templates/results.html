@@ -1,0 +1,23 @@
+<style>
+   table, th, td {
+   border: 1px solid black;
+   }
+</style>
+<table style="width: 100%">
+   <thead>
+      <th>ID</th>
+      <th>TITLE</th>
+      <th>URL</th>
+      <th>SCORE</th>
+   </thead>
+   <tbody>
+      {% for score, entry in data %}
+      <tr>
+         <td>{{ loop.index0 }}</td>
+         <td>{{ entry.title }}</td>
+         <td><a href={{ entry.url }}>{{ entry.url }}</a></td>
+         <td>{{ score }}</td>
+      </tr>
+      {% endfor %}
+   </tbody>
+</table>

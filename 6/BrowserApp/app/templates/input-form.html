@@ -1,0 +1,86 @@
+<style>
+  body {
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #wrapper {
+    height: 300px;
+    width: 600px;
+    padding: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    /*background-color: red*/
+    border: 5px solid #40de6b;
+    background: #1abc9c;
+  }
+
+  #header {
+    width: 100%;
+    padding: 35px;
+    margin-bottom: 10px;
+    text-align: center;
+    color: black;
+    font-size: 30px;
+    border: 5px solid #FFFF00;
+    background: #ffcd42;
+    font-weight: bold;
+  }
+
+  .center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0 10px 0;
+    text-align: center;
+  }
+
+  #query-if-ctn {
+    width: 100%;
+    /*background-color: yellow;*/
+  }
+
+  #resultscnt-if-ctn {
+    width: 100%;
+    /*background-color: green;*/
+    padding: 1px 0 1px 0;
+  }
+
+  #submit-btn-ctn {
+    width: 100%;
+    /*background-color: orange;*/
+    padding: 1px 0 1px 0;
+  }
+
+  #query-if {
+    width: 80%;
+    height: 60%;
+  }
+
+  #resultscnt-if {
+    width: 30%;
+  }
+
+  #submit-btn {
+    width: 20%;
+  }
+
+  input {
+    font-size: 14px;
+    text-align: center;
+  }
+</style>
+
+<form method="POST">
+  <div id="wrapper">
+    <div id="header" class="center">MASHIINKA RAADINTA</div>
+    <div id="query-if-ctn" class="center"><input id="query-if" name="query-input-field" placeholder="What are you looking for?"></div>
+    <div id="resultscnt-if-ctn" class="center"><input id="resultscnt-if" name="resultscnt-input-field" placeholder="How many results?"></div>
+    <div id="submit-btn-ctn" class="center"><input id="submit-btn" type="submit"></div>
+  </div>
+</form>

@@ -1,5 +1,5 @@
-from Entry import Entry
-import const
+from app.browser_logic.Entry import Entry
+import app.browser_logic.const as const
 from abc import ABC, abstractmethod
 from typing import List, Dict
 import nltk
@@ -8,8 +8,10 @@ from nltk.corpus import stopwords
 import re
 import pickle
 from collections import defaultdict
-from scipy.sparse import csr_matrix
+import scipy as sci
 import numpy as np
+from pathlib import Path
+import os
 
 
 class BrowserLogic(ABC):
@@ -21,15 +23,16 @@ class BrowserLogic(ABC):
         nltk.download('stopwords')
 
     def fit(self, _load_dumped=False):
+        Path(os.path.join('tmp', self.name)).mkdir(parents=True, exist_ok=True)
         loaded = False
         if _load_dumped:
             try:
-                self.entries = self.load_dumped(const.DUMP_FP_ENTRIES)
-                self.dictionary = self.load_dumped(const.DUMP_FP_DICTIONARY)
-                self.matrix = self.load_dumped(const.DUMP_FP_MATRIX)
-                print('Loaded dumped files')
+                self.entries = self.load_dumped(const.DUMP_FB_ENTRIES)
+                self.dictionary = self.load_dumped(const.DUMP_FB_DICTIONARY)
+                self.matrix = self.load_dumped(const.DUMP_FB_MATRIX)
+                print('Loaded cached files')
                 loaded = True
-            except FileNotFoundError:
+            except FileNotFoundError as e:
                 pass
         if not loaded:
             self.init_entries()
@@ -41,9 +44,9 @@ class BrowserLogic(ABC):
         scores_entry_ids = self.search_raw(keywords, results_cnt)
         print(f'Results for: {keywords}')
         i = 0
-        for score, ei in scores_entry_ids:
+        for score, entry in scores_entry_ids:
             print(f'>>> Result {i}, scored {score}')
-            self.entries[ei].pretty_print(print_text)
+            entry.pretty_print(print_text)
             print()
             i += 1
 
@@ -59,7 +62,7 @@ class BrowserLogic(ABC):
         N = len(self.entries)
         scores = [None]*N
         for ei in range(N):
-            scores[ei] = (self.calculate_score(query_vec_T, query_norm, ei), ei)
+            scores[ei] = (self.calculate_score(query_vec_T, query_norm, ei), self.entries[ei])
 
         return sorted(scores)[N-1:-results_cnt-1:-1]
 
@@ -86,8 +89,8 @@ class BrowserLogic(ABC):
         for wi, word in enumerate(words):
             self.dictionary[word] = wi
 
-        self.dump(const.DUMP_FP_ENTRIES, self.entries)
-        self.dump(const.DUMP_FP_DICTIONARY, self.dictionary)
+        self.dump(const.DUMP_FB_ENTRIES, self.entries)
+        self.dump(const.DUMP_FB_DICTIONARY, self.dictionary)
 
     def preprocess(self, entry, lemmatizer, stopwords_en):
         text = entry.text
@@ -127,18 +130,21 @@ class BrowserLogic(ABC):
                     entry.additional_info['words_cnt'] * \
                     IDFs[self.dictionary[word]]
 
-            self.matrix[-1] = csr_matrix(self.matrix[-1])
+            self.matrix[-1] = sci.sparse.csr_matrix(self.matrix[-1])
             del entry.additional_info['words_dict']
             del entry.additional_info['words_cnt']
 
         del IDFs
-        self.dump(const.DUMP_FP_MATRIX, self.matrix)
+        self.dump(const.DUMP_FB_MATRIX, self.matrix)
 
-    def dump(self, dump_fp, obj):
-        with open(dump_fp, 'wb+') as dump_f:
+    def get_fp(self, fb):
+        return os.path.join('tmp', self.name, f'{fb}.pkl')
+
+    def dump(self, dump_fb, obj):
+        with open(self.get_fp(dump_fb), 'wb+') as dump_f:
             pickle.dump(obj, dump_f)
 
-    def load_dumped(self, dump_fp):
-        with open(dump_fp, 'rb') as dump_f:
+    def load_dumped(self, dump_fb):
+        with open(self.get_fp(dump_fb), 'rb') as dump_f:
             obj = pickle.load(dump_f)
         return obj

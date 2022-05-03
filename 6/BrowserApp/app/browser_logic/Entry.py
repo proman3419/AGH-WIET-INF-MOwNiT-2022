@@ -1,4 +1,4 @@
-import const
+import app.browser_logic.const
 from dataclasses import dataclass
 from typing import List, Dict
 
@@ -16,4 +16,6 @@ class Entry:
         if print_text:
             text_len = min(len(self.text), const.ENTRY_TEXT_PRINT_LEN)
             print(f'text: {self.text[:text_len]}...')
-        print(f'url: {self.url}')
+
+    def __lt__(self, other):
+        return len(self.text) < len(other.text)

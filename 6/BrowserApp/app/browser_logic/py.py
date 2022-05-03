@@ -1,4 +1,4 @@
-from Entry import Entry
+from app.browser_logic.Entry import Entry
 import re
 
 

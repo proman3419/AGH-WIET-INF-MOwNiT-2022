@@ -51,6 +51,10 @@
     padding: 1px 0 1px 0;
   }
 
+  #noise-reduction-ctn {
+    width: 100%;
+  }
+
   #submit-btn-ctn {
     width: 100%;
     /*background-color: orange;*/
@@ -59,15 +63,24 @@
 
   #query-if {
     width: 80%;
-    height: 60%;
   }
 
   #resultscnt-if {
-    width: 30%;
+    width: 35%;
   }
 
   #submit-btn {
     width: 20%;
+  }
+
+  #noise-reduction-if {
+    width: 30%;
+    margin: 0;
+  }
+
+  #noise-reduction-cb {
+    width: 5%;
+    margin: 0;
   }
 
   input {
@@ -79,8 +92,16 @@
 <form method="POST">
   <div id="wrapper">
     <div id="header" class="center">MASHIINKA RAADINTA</div>
-    <div id="query-if-ctn" class="center"><input id="query-if" name="query-input-field" placeholder="What are you looking for?"></div>
-    <div id="resultscnt-if-ctn" class="center"><input id="resultscnt-if" name="resultscnt-input-field" placeholder="How many results?"></div>
+    <div id="query-if-ctn" class="center">
+      <input id="query-if" name="query-if" placeholder="What are you looking for?">
+    </div>
+    <div id="resultscnt-if-ctn" class="center">
+      <input id="resultscnt-if" name="resultscnt-if" placeholder="How many results?">
+    </div>
+    <div id="noise-reduction-ctn" class="center">
+      <input id="noise-reduction-if" name="noise-reduction-if" placeholder="Noise reduction value">
+      <input id="noise-reduction-cb" name="noise-reduction-cb" type="checkbox" title="Apply noise reduction">
+    </div>
     <div id="submit-btn-ctn" class="center"><input id="submit-btn" type="submit"></div>
   </div>
 </form>

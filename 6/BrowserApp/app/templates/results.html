@@ -1,23 +1,75 @@
 <style>
-   table, th, td {
-   border: 1px solid black;
-   }
+  #header {
+    padding: 60px;
+    margin-bottom: 10px;
+    text-align: center;
+    background: #1abc9c;
+    color: black;
+    font-size: 30px;
+  }
+
+  table {
+    color: #333;
+    background: white;
+    border: 1px solid grey;
+    font-size: 12pt;
+    border-collapse: collapse;
+  }
+
+  table thead th,
+  table tfoot th {
+    color: #777;
+    background: rgba(0,0,0,.1);
+  }
+
+  table caption {
+    padding:.5em;
+  }
+
+  table th,
+  table td {
+    padding: .5em;
+    border: 1px solid lightgrey;
+  }
+
+  .center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0 10px 0;
+    text-align: center;
+  }
+
+  #return-btn-ctn {
+    width: 100%;
+    /*background-color: orange;*/
+    padding: 10px 0 10px 0;
+  }
+
+  #return-btn {
+    width: 10%;
+  }
 </style>
+
+<div id="header">Top {{ results_cnt }} results for query "{{ query }}"</div>
 <table style="width: 100%">
-   <thead>
-      <th>ID</th>
-      <th>TITLE</th>
-      <th>URL</th>
-      <th>SCORE</th>
-   </thead>
-   <tbody>
-      {% for score, entry in data %}
-      <tr>
-         <td>{{ loop.index0 }}</td>
-         <td>{{ entry.title }}</td>
-         <td><a href={{ entry.url }}>{{ entry.url }}</a></td>
-         <td>{{ score }}</td>
-      </tr>
-      {% endfor %}
-   </tbody>
+  <thead>
+    <th>ID</th>
+    <th>TITLE</th>
+    <th>URL</th>
+    <th>TEXT</th>
+    <th>SCORE</th>
+  </thead> 
+  <tbody>
+    {% for score, entry in search_results %}
+    <tr>
+      <td>{{ loop.index0 }}</td>
+      <td>{{ entry.title }}</td>
+      <td><a href={{ entry.url }}>{{ entry.url }}</a></td>
+      <td>{{ entry.text[:80] }}...</td>
+      <td>{{'%0.3f'| format(score|float)}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
+<div id="return-btn-ctn" class="center"><input id="return-btn" type="submit", value="Return" onclick="history.back()"></div>

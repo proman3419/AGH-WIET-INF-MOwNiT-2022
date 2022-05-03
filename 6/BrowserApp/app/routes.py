@@ -9,25 +9,12 @@ def input_form():
 
 
 @app.route('/', methods=['POST'])
-def my_form_post():
-    text = request.form['input-field']
+def input_form_post():
+    query = request.form['query-input-field']
+    results_cnt = request.form['resultscnt-input-field']
+
     WBL = WikipediaBrowserLogic()
     WBL.fit(_load_dumped=True)
-    data = WBL.search_raw(text.split(), 5)
-    return render_template('results.html', data=data)
-
-
-# @app.route('/')
-# def input_form():
-#     return render_template('input-form.html')
-
-
-# @app.route('/', methods=['POST'])
-# def my_form_post():
-#     text = request.form['input-field']
-#     return text
-
-
-@app.route('/hello')
-def hello():
-    return "Hello, World!"
+    search_results = WBL.search_raw(query.split(), int(results_cnt))
+    return render_template('results.html', query=query, results_cnt=results_cnt,
+                           search_results=search_results)

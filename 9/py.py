@@ -60,15 +60,9 @@ class MatchCandidate:
 def ocr(im_path, font_name, font_size):
     im, W, H = open_image(im_path)
     im, W, H = rotate_image(np.asarray(im))
-    show_image(im, (10, 5), 'ASDSAd')
-    return
-    crop_text(np.asarray(im))
+    im, W, H = crop_text(np.asarray(im))
     im_processed = process_image(im)
     im_dft = fft2(im_processed)
-
-    return
-
-    show_steps(im_processed, im_processed, im_dft, (10, 5))
 
     font = ImageFont.truetype(font_name, font_size)
     match_candidates = []
@@ -91,8 +85,6 @@ def ocr(im_path, font_name, font_size):
                     x0, y0 = x - w + 1, y - h + 1
                     match_candidates.append(MatchCandidate(char, C[x][y], x0, y0))
 
-    print('1')
-
     char_w, char_h = font.getsize('i')
     space_w, _ = font.getsize(' ')
 
@@ -107,8 +99,6 @@ def ocr(im_path, font_name, font_size):
         elif candidate.C < matches[box_y][box_x].C:
             matches[box_y][box_x] = candidate
 
-    print('2')
-
     for box_y in sorted(matches):
         prev_x = -1
         for box_x in sorted(matches[box_y]):
@@ -122,12 +112,11 @@ def ocr(im_path, font_name, font_size):
             prev_x = curr_x + char_to_pattern_dims[match.char][0]
         print()
 
-    print('3')
-
 def ocr_call_unwrapper(im_path):
     parts = im_path.split('/')[-1].split('_')
     font_name = parts[0] + '.ttf'
     font_size = int(parts[2])
+    # font_size = 18
     ocr(im_path, font_name, font_size)
 
 def rotate_image(im):
@@ -138,8 +127,6 @@ def rotate_image(im):
     
     coords = np.column_stack(np.where(thresh > 0))
     rot = cv2.minAreaRect(coords)[-1]
-    print(rot)
-    # exit()
 
     out = Image.fromarray(np.uint8(im))
     out = out.rotate(-rot, expand=True, fillcolor=(255, 255, 255))
@@ -149,39 +136,19 @@ def rotate_image(im):
 
 # https://stackoverflow.com/questions/72202507/how-to-crop-image-to-only-text-section-with-python-opencv
 def crop_text(im):
-    # Load image, grayscale, Gaussian blur, Otsu's threshold
-    original = im.copy()
-    gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (3, 3), 0)
-    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    img = im
+    # Read in the image and convert to grayscale
+    img = img[:-20, :-20]  # Perform pre-cropping
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = 255*(gray < 180).astype(np.uint8)  # To invert the text to white
+    gray = cv2.morphologyEx(gray, cv2.MORPH_OPEN, np.ones(
+        (2, 2), dtype=np.uint8))  # Perform noise filtering
+    coords = cv2.findNonZero(gray)  # Find all non-zero points (text)
+    x, y, w, h = cv2.boundingRect(coords)  # Find minimum spanning bounding box
+    # Crop the image - note we do this on the original image
+    rect = img[y-3:y+h+1, x-2:x+w+1]
+    out = Image.fromarray(np.uint8(rect))
+    w, h = out.size
+    return out, w, h
 
-    # Remove horizontal lines
-    horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25,1))
-    detected_lines = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, horizontal_kernel, iterations=1)
-    cnts = cv2.findContours(detected_lines, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-    for c in cnts:
-        cv2.drawContours(thresh, [c], -1, 0, -1)
-
-    # Dilate to merge into a single contour
-    vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2,30))
-    dilate = cv2.dilate(thresh, vertical_kernel, iterations=3)
-
-    # Find contours, sort for largest contour and extract ROI
-    cnts, _ = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
-    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:-1]
-    for c in cnts:
-        x,y,w,h = cv2.boundingRect(c)
-        cv2.rectangle(im, (x, y), (x + w, y + h), (36,255,12), 4)
-        ROI = original[y:y+h, x:x+w]
-        break
-
-    cv2.imshow('im', im)
-    cv2.imshow('dilate', dilate)
-    cv2.imshow('thresh', thresh)
-    cv2.imshow('ROI', ROI)
-    cv2.waitKey()
-
-# im, _, _ = open_image('img/FreeSans_medium_18_45.png')
-
-ocr_call_unwrapper('img/FreeSerif_medium_18_45.png')
+ocr_call_unwrapper('img/FreeSerif_medium_18_90.png')

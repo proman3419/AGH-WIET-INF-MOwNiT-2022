@@ -22,5 +22,5 @@ Metoda `fit` klasy `BrowserLogic` przyjmuje zmienną logiczną określającą cz
 Część obliczeniowa programu znajduje się w ścieżce `BrowserApp/app/browser_logic`.
 
 ## Prezentacja
-![input_form](https://user-images.githubusercontent.com/29145519/166587544-826d0227-fa7b-434e-aba5-db636e5f7f74.png)
-![results](https://user-images.githubusercontent.com/29145519/166587540-b6804486-c5d7-4f0a-a43f-6816f99babf5.png)
+![input_form](input_form.png)
+![results](results.png)
